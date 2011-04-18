@@ -1,0 +1,4 @@
+#!/bin/sh
+# Filtering a stream to remove any VCS specific files.
+
+grep -v '.git' -

@@ -1,0 +1,19 @@
+#!/bin/sh -C -e
+# Simple script to put the shbang at the start of files.
+
+if [ $# -eq 0 ]; then
+  cat << EOF
+#!/bin/sh
+# 
+EOF
+else
+  cat << EOF > "$*"
+#!/bin/sh
+# 
+EOF
+  # If the EDITOR is defined then open and edit the file and then make it executable
+  if [ ! -z "${EDITOR}" ]; then
+    ${EDITOR} "$*"
+    chmod u+x "$*"
+  fi
+fi

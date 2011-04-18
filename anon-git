@@ -1,0 +1,6 @@
+#!/bin/sh
+# Quick script to set up my alternate username/email for GitHub use.
+# I don't really want my work email address used in GitHub.
+
+git config user.name "Olaf TNSB"
+git config user.email "still.another.person@gmail.com"
