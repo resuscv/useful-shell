@@ -1,0 +1,29 @@
+#!/usr/bin/perl
+
+# Sortdu - Wow! my first vaguely useful perl program.
+# (C) Simon Huggins <huggie@earth.li> 1999
+# GPL if anyone wants it.
+
+# You probably want to quote arguments since du is executed by the shell
+# anyway.  Try sortdu '*' and compare with sortdu * somewhere with
+# subdirectories with spaces in the names :)
+
+$|=1; # autoflush STDIN;
+
+if (@ARGV == 0) { push @ARGV, "*"; }
+
+print "About to execute du -sh @ARGV\n";
+
+@lines=`du -sh @ARGV`;
+
+@Gigs= grep /^\s*[0-9\.]+G\s+/, @lines ;
+@Megs= grep /^\s*[0-9\.]+M\s+/, @lines ;
+@Kbytes= grep /^\s*[0-9\.]+[kK]\s+/, @lines ;
+@bytes= grep /^\s*[0-9\.]+\s+/, @lines ;
+
+sub numerical { $a <=> $b; }
+
+print sort numerical @bytes;
+print sort numerical @Kbytes;
+print sort numerical @Megs;
+print sort numerical @Gigs;
