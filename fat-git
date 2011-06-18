@@ -1,0 +1,10 @@
+#!/bin/sh
+# Quick script to make git ignore the executable bit differences between the
+# index and the working copy are ignored; useful on broken filesystems like FAT.
+#
+# Source(s):
+#  http://stackoverflow.com/questions/1580596/how-do-i-make-git-ignore-mode-changes-chmod
+#   and of course
+#  RTFM
+
+git config core.filemode false

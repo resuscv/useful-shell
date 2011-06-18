@@ -1,0 +1,15 @@
+#!/bin/sh
+# Script to take a comma, tab, whatever separated file and display
+# the columns and a number
+#
+# WARNING - this isn't perfect and gets tripped up on input like:
+#   "field1,in quotes", field2
+
+if [ $# -eq 0 ]; then
+  # Assume the file is comma separated if there is no input
+  sep=,
+else
+  sep="$1"
+fi
+
+sed "s/$sep/\n/g" - | cat -n
