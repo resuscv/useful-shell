@@ -1,4 +1,5 @@
 #!/bin/sh
 # Filtering a stream to remove any VCS specific files.
+# Also ignores the bloody OSX tracking files.
 
-grep -v '.git' -
+grep -v -e '\.git' -e '\.DS_Store' -
