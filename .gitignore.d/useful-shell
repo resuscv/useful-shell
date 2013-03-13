@@ -1,4 +1,5 @@
 *
+!.gitignore.d/useful-shell
 !bin/anon-git
 !bin/fat-git
 !bin/findin
