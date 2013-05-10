@@ -1,0 +1,23 @@
+MY_SESSION=std-mine
+
+tmux has-session -t ${MY_SESSION}
+if [ $? != 0 ]; then
+  ### Create a new session
+  # localhost (Main window): Two vertical panes
+  tmux new-session -s ${MY_SESSION} -n localhost -d
+  tmux split-window -h -t ${MY_SESSION}
+
+  # Development: A 1:2 setup
+  tmux new-window -n development -t ${MY_SESSION}
+  tmux split-window -h -t ${MY_SESSION}
+  tmux split-window -v -t ${MY_SESSION}
+  tmux select-layout -t ${MY_SESSION} tiled
+
+  # Org mode: A single pane setup
+  tmux new-window -n orgmode -t ${MY_SESSION}
+fi
+
+# Open in the default window
+tmux select-window -t ${MY_SESSION}:1
+tmux select-pane -t ${MY_SESSION}:1.1
+tmux attach -t ${MY_SESSION}
