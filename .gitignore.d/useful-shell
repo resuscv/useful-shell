@@ -6,5 +6,6 @@
 !bin/sep
 !bin/shbang
 !bin/sortdu
+!bin/tmux-start
 !bin/ungit
 !bin/update-afraid.sh
