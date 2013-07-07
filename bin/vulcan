@@ -1,0 +1,179 @@
+#!/bin/sh
+### Vulcan is my version of Flashbake.
+#  vulcan --vcsh --sshkey keyname repo
+#  vulcan git_directory
+
+#DEBUG=1
+
+PROGRAMME_NAME="vulcan"
+
+
+die() {
+    echo "$@"
+    exit 1
+}
+
+usage() {
+  echo "Usage:   ${PROGRAMME_NAME}  [flags]  directory_name"
+  exit 1
+}
+
+
+[ $# -gt 0 ] || usage
+
+
+ARGS=$(getopt \
+-n "${PROGRAMME_NAME}" \
+-o "vd" \
+--long "vcsh:,sshkey:,debug,help,notall" \
+-- "$@")
+
+# Die if they fat finger arguments
+[ $? = 0 ] || die "Error parsing arguments. Try $PROGRAM_NAME --help"
+
+# Assume it is a standard git directory unless we hear otherwise
+MODE="standard"
+_E=""
+
+if [ -n "$DEBUG" ]; then
+    _E=echo
+fi
+
+# Assume that the git command is simply git, but if it is a vcsh command we will change this...
+GIT="${_E} git"
+
+# By default we push all branches upstream
+ALL="--all"
+
+
+eval set -- "$ARGS"
+while true; do
+  case $1 in
+    --help)
+      usage; continue
+      ;;
+    -v|--vcsh)
+      MODE="vcsh"; REPO="$2"; shift 2; continue
+      ;;
+    --sshkey)
+      SSHKEY="$2"; shift 2; continue
+      ;;
+    -d|--debug)
+      _E=echo; shift; continue
+      ;;
+    --notall)
+      unset ALL; shift; continue
+      ;;
+    --)
+      # No more arguments to parse
+      break
+      ;;
+    *)
+      printf "Unknown option %s\n" "$1"
+      exit 1
+      ;;
+  esac
+done
+
+
+#echo "...\$ @ follows"
+#echo "$@"
+#echo "...done"
+
+#eval set -- "$@"
+shift
+#REPO=$1
+shift
+echo "--------> $REPO <--"
+
+
+if [ $MODE == "vcsh" ]; then
+    GIT="${_E} vcsh run $REPO git"
+fi
+
+
+### Steps
+# - add and commit current changes
+# - if a ssh key is defined add it to the ssh-agent  [ARGUMENT]
+# - pull orgin/master
+# - check the merge
+#   - if a clean merge do the merge
+#     - if origin is bare then push to orgin  [ARGUMENT]
+#   - if merge is not clean
+#     - DO NOT merge
+#     - email that the merge failed
+#
+
+
+#####
+# Add and commit changes
+#####
+if [ "x$MODE" = "xstandard" ]; then
+  if [ ! -d $REPO ]; then
+    cat <<EOF
+!!! ERROR !!!   `date`
+!!! ERROR !!!   This path is not a git repo:  `pwd`
+EOF
+    exit 1
+  else
+    # Only run if the directory is actually a git repo
+    cd $REPO
+    if [ $(git status 1>/dev/null 2>&1 ; echo $?) -eq 0 ]; then
+	${_E} git add .
+	${_E} git commit -q -m "Auto commit by vulcan"
+    else
+      cat <<EOF
+!!! ERROR !!!   `date`
+!!! ERROR !!!   This path is not a git repo:  `pwd`
+EOF
+      exit 1
+    fi
+  fi
+elif [ "x$MODE" = "xvcsh" ]; then
+    ${_E} vcsh run ${REPO} git add .
+    ${_E} vcsh run ${REPO} git commit -q -m Vulcan_autocommit
+fi
+
+
+#####
+# Add key to agent
+#####
+if [ ! -z "${SSHKEY}" ]; then
+  if [ -z "${SSH_AUTH_SOCK}" ]; then
+    ${_E} eval `ssh-agent`
+  fi
+  ${_E} ssh-add ${SSHKEY}
+fi
+
+
+#####
+# Pull origin master
+#####
+FixFailedMerge() {
+    ${GIT} reset --hard
+    cat <<EOF
+  MERGE FAILED
+
+- Local  revision:  $(command git rev-parse --short HEAD 2> /dev/null)
+- Remote revision:  $(command git rev-parse --short origin/master 2> /dev/null)
+
+Local reset to the last good commit.
+
+You NEED to fix this.
+EOF
+}
+
+${GIT} pull --quiet --no-edit || FixFailedMerge
+
+
+#####
+# Push ALL(?) branches
+####
+
+${GIT} push -u ${ALL}
+
+#echo "mode = $MODE"
+#echo "sshkey = $SSHKEY"
+#echo "repo = $REPO"
+
+## END

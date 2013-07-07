@@ -9,3 +9,4 @@
 !bin/tmux-start
 !bin/ungit
 !bin/update-afraid.sh
+!bin/vulcan
