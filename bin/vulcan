@@ -5,8 +5,8 @@
 
 #DEBUG=1
 
-PROGRAMME_NAME="vulcan"
-
+readonly PROGNAME="vulcan"
+TMPDIR=~/tmp
 
 die() {
     echo "$@"
@@ -14,18 +14,55 @@ die() {
 }
 
 usage() {
-  echo "Usage:   ${PROGRAMME_NAME}  [flags]  directory_name"
+  cat <<EOF
+	Usage:   ${PROGRAMME_NAME}  [flags]  <directory_name or vcsh repo>
+
+	Automation to version control your files.  A flashbake replacement.
+
+	Vulcan was written because I couldn't get flashbake to work and it
+	didn't look supported.  See the URL below for the history of
+	flashbake.
+
+	http://bitbucketlabs.net/flashbake/
+	https://github.com/resuscv/useful-shell    [for Vulcan development]
+
+	OPTIONS:
+	   -v, --vcsh <repo>
+		Use 'vcsh + git' rather than straight git.
+
+	   -d, --debug
+		Switch on debugging and display what would happen.
+
+	   --sshkey <keyid>
+		Use the SSH key with ID 'keyid;Use 'vcsh + git' rather than straight git.
+
+	   --notall
+		Don't push all refs under refs/heads (see git-push)
+
+	   --nopush, --nopull, --nonet
+		Don't push / pull / push & pull (i.e. no NETwork)
+
+	   --tmpdir <tmpdir>
+		The directory in which working files are written.  This includes the
+		lock file to make sure warning messages are not sent too often.
+		Currently set to:  ${TMPDIR}
+
+	   -h, --help
+		HELP?  Can anyone hear me?
+EOF
   exit 1
 }
 
 
-[ $# -gt 0 ] || usage
+# No arguments on the command line, mean you need some help.
+[ $# -gt 0 ] \
+    || usage
 
 
 ARGS=$(getopt \
 -n "${PROGRAMME_NAME}" \
--o "vd" \
---long "vcsh:,sshkey:,debug,help,notall" \
+-o "vdh" \
+--long "vcsh,sshkey:,debug,help,notall,nopush,nopull,nonet,tmpdir:" \
 -- "$@")
 
 # Die if they fat finger arguments
@@ -39,21 +76,29 @@ if [ -n "$DEBUG" ]; then
     _E=echo
 fi
 
+variable_exists() {
+    local var=$1
+
+    [ ! -z "$var" ]
+}
+
+
 # Assume that the git command is simply git, but if it is a vcsh command we will change this...
 GIT="${_E} git"
 
 # By default we push all branches upstream
 ALL="--all"
 
+unset REPO
 
 eval set -- "$ARGS"
 while true; do
   case $1 in
-    --help)
+    -h|--help)
       usage; continue
       ;;
     -v|--vcsh)
-      MODE="vcsh"; REPO="$2"; shift 2; continue
+      MODE="vcsh"; shift; continue
       ;;
     --sshkey)
       SSHKEY="$2"; shift 2; continue
@@ -63,6 +108,18 @@ while true; do
       ;;
     --notall)
       unset ALL; shift; continue
+      ;;
+    --nopush)
+      nopush="1"; shift; continue
+      ;;
+    --nopull)
+      nopull="1"; shift; continue
+      ;;
+    --nonet)
+      nopush="1"; nopull="1"; shift; continue
+      ;;
+    --tmpdir)
+      TMPDIR="$2"; shift 2; continue
       ;;
     --)
       # No more arguments to parse
@@ -75,15 +132,13 @@ while true; do
   esac
 done
 
-
-#echo "...\$ @ follows"
-#echo "$@"
-#echo "...done"
-
-#eval set -- "$@"
 shift
-#REPO=$1
-shift
+
+REPO=$1 && shift
+
+[[ -z "${REPO}" ]] \
+    && usage
+
 echo "--------> $REPO <--"
 
 
@@ -119,8 +174,8 @@ EOF
     # Only run if the directory is actually a git repo
     cd $REPO
     if [ $(git status 1>/dev/null 2>&1 ; echo $?) -eq 0 ]; then
-	${_E} git add .
-	${_E} git commit -q -m "Auto commit by vulcan"
+	${GIT} add .
+	${GIT} commit -q -m "Auto commit by vulcan"
     else
       cat <<EOF
 !!! ERROR !!!   `date`
@@ -130,8 +185,8 @@ EOF
     fi
   fi
 elif [ "x$MODE" = "xvcsh" ]; then
-    ${_E} vcsh run ${REPO} git add .
-    ${_E} vcsh run ${REPO} git commit -q -m Vulcan_autocommit
+    ${GIT} add .
+    ${GIT} commit -q -m Vulcan_autocommit
 fi
 
 
@@ -149,28 +204,54 @@ fi
 #####
 # Pull origin master
 #####
+
+CheckNotLocked() {
+    local lockfile=${1}
+    local lockfile_new=${lockfile}.new
+
+    touch ${lockfile_new}
+
+    if [ ${lockfile_new} -nt ${lockfile} ]; then
+	touch --date="`date --date='+ 1 day'`" ${lockfile}
+	rm -f ${lockfile_new}
+	true
+    else
+	false
+    fi
+}
+
+
 FixFailedMerge() {
+    local LOCKFILE=${TMPDIR}/${REPO}.lock
     ${GIT} reset --hard
-    cat <<EOF
+
+    CheckNotLocked ${LOCKFILE} \
+	&& cat <<EOF
   MERGE FAILED
 
-- Local  revision:  $(command git rev-parse --short HEAD 2> /dev/null)
-- Remote revision:  $(command git rev-parse --short origin/master 2> /dev/null)
+- Local  revision:  $(command ${GIT} rev-parse --short HEAD 2> /dev/null)
+- Remote revision:  $(command ${GIT} rev-parse --short origin/master 2> /dev/null)
 
 Local reset to the last good commit.
 
 You NEED to fix this.
+
+(Lockfile: ${LOCKFILE})
 EOF
 }
 
-${GIT} pull --quiet --no-edit || FixFailedMerge
+
+
+variable_exists ${nopull} \
+    || ${GIT} pull --quiet --no-edit \
+    || FixFailedMerge
 
 
 #####
 # Push ALL(?) branches
 ####
-
-${GIT} push -u ${ALL}
+variable_exists ${nopush} \
+    || ${GIT} push -u ${ALL}
 
 #echo "mode = $MODE"
 #echo "sshkey = $SSHKEY"
