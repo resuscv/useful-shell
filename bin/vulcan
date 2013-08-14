@@ -238,6 +238,8 @@ You NEED to fix this.
 
 (Lockfile: ${LOCKFILE})
 EOF
+
+  exit 2
 }
 
 
