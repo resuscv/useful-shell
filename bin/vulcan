@@ -8,6 +8,9 @@
 readonly PROGNAME="vulcan"
 TMPDIR=~/tmp
 
+# Handle the case of older git installs.
+GIT_MERGE_AUTOEDIT=no
+
 die() {
     echo "$@"
     exit 1
@@ -245,7 +248,7 @@ EOF
 
 
 variable_exists ${nopull} \
-    || ${GIT} pull --quiet --no-edit \
+    || ${GIT} pull --quiet \
     || FixFailedMerge
 
 
