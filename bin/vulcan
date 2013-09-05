@@ -11,8 +11,18 @@ TMPDIR=~/tmp
 # Handle the case of older git installs.
 GIT_MERGE_AUTOEDIT=no
 
+ERROR_COUNT=0
+
+
 die() {
     echo "$@"
+
+    # If there is an output file defined, show it then remove it
+    if [ -f "${OutputFile}" ]; then
+	cat ${OutputFile}
+	rm -f ${OutputFile}
+    fi
+
     exit 1
 }
 
@@ -142,12 +152,19 @@ REPO=$1 && shift
 [[ -z "${REPO}" ]] \
     && usage
 
-echo "--------> $REPO <--"
-
-
 if [ $MODE == "vcsh" ]; then
     GIT="${_E} vcsh run $REPO git"
 fi
+
+
+# This is the temporary file in which output will be written
+OutputFile=`mktemp --tmpdir=${TMPDIR}`
+if [ -n "${_E}" ]; then
+    echo "Temporary log file: ${OutputFile}"
+fi
+
+
+echo "--------> $REPO <--" >> ${OutputFile}
 
 
 ### Steps
@@ -177,8 +194,8 @@ EOF
     # Only run if the directory is actually a git repo
     cd $REPO
     if [ $(git status 1>/dev/null 2>&1 ; echo $?) -eq 0 ]; then
-	${GIT} add .
-	${GIT} commit -q -m "Auto commit by vulcan"
+	${GIT} add . >> ${OutputFile} 2>&1 ; ERROR_COUNT=`expr ${ERROR_COUNT} + $?`
+	${GIT} commit -q -m "Auto commit by vulcan" >> ${OutputFile} 2>&1 ; ERROR_COUNT=`expr ${ERROR_COUNT} + $?`
     else
       cat <<EOF
 !!! ERROR !!!   `date`
@@ -188,8 +205,8 @@ EOF
     fi
   fi
 elif [ "x$MODE" = "xvcsh" ]; then
-    ${GIT} add .
-    ${GIT} commit -q -m Vulcan_autocommit
+    ${GIT} add . >> ${OutputFile} 2>&1 ; ERROR_COUNT=`expr ${ERROR_COUNT} + $?`
+    ${GIT} commit -q -m Vulcan_autocommit >> ${OutputFile} 2>&1 ; ERROR_COUNT=`expr ${ERROR_COUNT} + $?`
 fi
 
 
@@ -198,9 +215,9 @@ fi
 #####
 if [ ! -z "${SSHKEY}" ]; then
   if [ -z "${SSH_AUTH_SOCK}" ]; then
-    ${_E} eval `ssh-agent`
+    ${_E} eval `ssh-agent` >> ${OutputFile} 2>&1 ; ERROR_COUNT=`expr ${ERROR_COUNT} + $?`
   fi
-  ${_E} ssh-add ${SSHKEY}
+  ${_E} ssh-add ${SSHKEY} >> ${OutputFile} 2>&1 ; ERROR_COUNT=`expr ${ERROR_COUNT} + $?`
 fi
 
 
@@ -226,7 +243,7 @@ CheckNotLocked() {
 
 FixFailedMerge() {
     local LOCKFILE=${TMPDIR}/${REPO}.lock
-    ${GIT} reset --hard
+    ${GIT} reset --hard >> ${OutputFile} 2>&1 ; ERROR_COUNT=`expr ${ERROR_COUNT} + $?`
 
     CheckNotLocked ${LOCKFILE} \
 	&& cat <<EOF
@@ -248,7 +265,7 @@ EOF
 
 
 variable_exists ${nopull} \
-    || ${GIT} pull --quiet \
+    || ${GIT} pull --quiet  >> ${OutputFile} 2>&1 \
     || FixFailedMerge
 
 
@@ -256,10 +273,17 @@ variable_exists ${nopull} \
 # Push ALL(?) branches
 ####
 variable_exists ${nopush} \
-    || ${GIT} push -u ${ALL}
+    || ${GIT} push -u ${ALL} >> ${OutputFile} 2>&1 ; ERROR_COUNT=`expr ${ERROR_COUNT} + $?`
 
+
+if [ -n "${_E}" ] || [ ${ERROR_COUNT} -gt 0 ]; then
+    echo "Error count is : ${ERROR_COUNT}"
+    cat ${OutputFile}
+    rm -f ${OutputFile}
+fi
 #echo "mode = $MODE"
 #echo "sshkey = $SSHKEY"
 #echo "repo = $REPO"
 
+exit ${ERROR_COUNT}
 ## END
