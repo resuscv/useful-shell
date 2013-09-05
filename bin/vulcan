@@ -288,8 +288,10 @@ variable_exists ${nopush} \
 if [ -n "${_E}" ] || [ ${ERROR_COUNT} -gt 0 ]; then
     echo "Error count is : ${ERROR_COUNT}"
     cat ${OutputFile}
-    rm -f ${OutputFile}
 fi
+
+rm -f ${OutputFile}
+
 #echo "mode = $MODE"
 #echo "sshkey = $SSHKEY"
 #echo "repo = $REPO"
