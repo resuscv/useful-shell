@@ -12,7 +12,8 @@ TMPDIR=~/tmp
 GIT_MERGE_AUTOEDIT=no
 
 ERROR_COUNT=0
-
+# Default is 30 seconds for the ssh-agent key lifetime.
+SSH_LIFETIME=30
 
 die() {
     echo "$@"
@@ -47,7 +48,12 @@ usage() {
 		Switch on debugging and display what would happen.
 
 	   --sshkey <keyid>
-		Use the SSH key with ID 'keyid;Use 'vcsh + git' rather than straight git.
+		Use the SSH key with ID 'keyid'.  Add to the ssh-agent.
+
+	   --sshlifetime <seconds>
+		Set a maximum lifetime when adding identities to the ssh-agent.
+		The lifetime may be specified in seconds or in a time format
+		specified in sshd_config(5).  See also ssh-add(1).
 
 	   --notall
 		Don't push all refs under refs/heads (see git-push)
@@ -75,7 +81,7 @@ EOF
 ARGS=$(getopt \
 -n "${PROGRAMME_NAME}" \
 -o "vdh" \
---long "vcsh,sshkey:,debug,help,notall,nopush,nopull,nonet,tmpdir:" \
+--long "vcsh,sshkey:,sshlifetime:,debug,help,notall,nopush,nopull,nonet,tmpdir:" \
 -- "$@")
 
 # Die if they fat finger arguments
@@ -115,6 +121,9 @@ while true; do
       ;;
     --sshkey)
       SSHKEY="$2"; shift 2; continue
+      ;;
+    --sshlifetime)
+      SSH_LIFETIME="$2"; shift 2; continue
       ;;
     -d|--debug)
       _E=echo; shift; continue
@@ -217,7 +226,7 @@ if [ ! -z "${SSHKEY}" ]; then
   if [ -z "${SSH_AUTH_SOCK}" ]; then
     ${_E} eval `ssh-agent` >> ${OutputFile} 2>&1 ; ERROR_COUNT=`expr ${ERROR_COUNT} + $?`
   fi
-  ${_E} ssh-add ${SSHKEY} >> ${OutputFile} 2>&1 ; ERROR_COUNT=`expr ${ERROR_COUNT} + $?`
+  ${_E} ssh-add -t ${SSH_LIFETIME} ${SSHKEY} >> ${OutputFile} 2>&1 ; ERROR_COUNT=`expr ${ERROR_COUNT} + $?`
 fi
 
 
