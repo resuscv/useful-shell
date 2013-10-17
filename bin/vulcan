@@ -223,9 +223,11 @@ fi
 #####
 # Add key to agent
 #####
+unset startedSSHagent
 if [ ! -z "${SSHKEY}" ]; then
   if [ -z "${SSH_AUTH_SOCK}" ]; then
     ${_E} eval `ssh-agent` >> ${OutputFile} 2>&1 ; ERROR_COUNT=`expr ${ERROR_COUNT} + $?`
+    startedSSHagent=1
   fi
   ${_E} ssh-add -t ${SSH_LIFETIME} ${SSHKEY} >> ${OutputFile} 2>&1 ; ERROR_COUNT=`expr ${ERROR_COUNT} + $?`
 fi
@@ -284,6 +286,11 @@ variable_exists ${nopull} \
 ####
 variable_exists ${nopush} \
     || ${GIT} push -u ${ALL} >> ${OutputFile} 2>&1 ; ERROR_COUNT=`expr ${ERROR_COUNT} + $?`
+
+
+# If we started it, stop the ssh-agent
+variable_exists ${startedSSHagent} \
+    && ssh-agent -k 1> /dev/null
 
 
 if [ -n "${_E}" ] || [ ${ERROR_COUNT} -gt 0 ]; then
