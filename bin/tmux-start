@@ -15,6 +15,7 @@ if [ $? != 0 ]; then
 
   # Org mode: A single pane setup
   tmux new-window -n orgmode -t ${MY_SESSION}
+  tmux send-keys -t orgmode 'emacs' C-m
 fi
 
 # Open in the default window
