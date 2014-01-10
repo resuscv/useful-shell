@@ -1,24 +1,49 @@
+#!/bin/bash
+
 MY_SESSION=std-mine
+CMD=tmux
+
+
+CreateBaseSession() {
+    local session=$1
+
+    ### Create a new session
+    # localhost (Main window): Two vertical panes
+    ${CMD} new-session -s ${1} -n localhost -d
+    #${CMD} split-window -h -t ${MY_SESSION}
+
+    # Development: A 1:2 setup
+    ${CMD} new-window -n development -t ${1}
+    ${CMD} split-window -h -t ${1}
+    ${CMD} split-window -v -t ${1}
+    ${CMD} select-layout -t ${1} tiled
+
+    # Org mode: A single pane setup
+    ${CMD} new-window -n orgmode -t ${1}
+    ${CMD} send-keys -t orgmode 'emacs -nw' C-m
+}
+
+AttachToBaseSession() {
+    local base_session=$1
+    local new_session=$2
+
+    ${CMD} new-session -t ${base_session} -s ${new_session} -d
+}
+
 
 tmux has-session -t ${MY_SESSION}
 if [ $? != 0 ]; then
-  ### Create a new session
-  # localhost (Main window): Two vertical panes
-  tmux new-session -s ${MY_SESSION} -n localhost -d
-  tmux split-window -h -t ${MY_SESSION}
-
-  # Development: A 1:2 setup
-  tmux new-window -n development -t ${MY_SESSION}
-  tmux split-window -h -t ${MY_SESSION}
-  tmux split-window -v -t ${MY_SESSION}
-  tmux select-layout -t ${MY_SESSION} tiled
-
-  # Org mode: A single pane setup
-  tmux new-window -n orgmode -t ${MY_SESSION}
-  tmux send-keys -t orgmode 'emacs' C-m
+    this_session=${MY_SESSION}
+    CreateBaseSession ${this_session}
+else
+    this_session="x_$(date +%s)"
+    AttachToBaseSession ${MY_SESSION} ${this_session}
 fi
 
 # Open in the default window
-tmux select-window -t ${MY_SESSION}:1
-tmux select-pane -t ${MY_SESSION}:1.1
-tmux attach -t ${MY_SESSION}
+${CMD} select-window -t ${this_session}:1
+${CMD} select-pane -t ${this_session}:1.1
+${CMD} attach -t ${this_session}
+if [ "${MY_SESSION}" != "${this_session}" ]; then
+    ${CMD} kill-session -t ${this_session}
+fi
