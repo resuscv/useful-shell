@@ -1,5 +1,4 @@
 *
-!.gitignore.d/useful-shell
 !bin/anon-git
 !bin/fat-git
 !bin/findin
@@ -10,3 +9,5 @@
 !bin/ungit
 !bin/update-afraid.sh
 !bin/vulcan
+!bin/vulcanize-org
+!.gitignore.d/useful-shell
