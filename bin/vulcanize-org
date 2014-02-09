@@ -1,0 +1,85 @@
+#!/bin/bash
+# Run my 'vulcan' script automatically on all 'org-XXX' vcsh repos.
+#
+#     vulcanize-org my-ssh-key 2 10
+#
+# Every two (2) hours if the minutes past the hour are less than ten (10) then do
+# network calls otherwise don't.
+
+if [ $# -ne 3 ]; then
+    cat <<EOF
+Usage:
+     vulcanize-org my-ssh-key 2 10
+EOF
+    exit 1
+fi
+
+readonly CUR_MIN=`date +%M`
+readonly CUR_HR=`date +%H`
+
+readonly VULCAN="${HOME}/bin/vulcan --vcsh"
+readonly V_NONET="--nonet"
+readonly V_NET="--sshkey ${1}"
+
+readonly NET_HOUR=${2}
+readonly NET_MINUTE=${3}
+
+
+is_not_empty() {
+    local var=$1
+
+    [[ -n $var ]]
+}
+
+WantDebugging() {
+    local debug=$1
+
+    is_not_empty ${debug} \
+        && echo "echo"
+}
+
+WantNetworking() {
+    [[ $(echo "${CUR_HR} % ${NET_HOUR}" | bc) -eq 0 ]] \
+	&& [[ $(echo "${CUR_MIN} / ${NET_MINUTE}" | bc) -eq 1 ]] \
+	&& echo "1"
+}
+
+
+#######
+## MAIN
+_E=$(WantDebugging ${DEBUG})
+DO_NET=$(WantNetworking)
+
+is_not_empty ${DEBUG} \
+    && cat <<EOF
+Do networking every
+  * ${NET_HOUR} hours
+  * in the ${NET_MINUTE}s minutes
+EOF
+
+
+#####
+# Start up the ssh-agent
+#####
+unset startedSSHagent
+if [ -z ${SSH_AUTH_SOCK} ]; then
+    is_not_empty ${_E} \
+	&& ${_E} eval `ssh-agent -t 300` \
+	|| eval `ssh-agent -t 300` 1> /dev/null    
+    startedSSHagent=1
+fi
+
+
+# Loop over all org type links in my vcsh list
+for o in `vcsh list | grep '^org-'`; do
+    is_not_empty ${DO_NET} \
+	&& ${_E} ${VULCAN} ${V_NET} ${o} \
+	|| ${_E} ${VULCAN} ${V_NONET} ${o}
+done
+
+
+# If we started it, stop the ssh-agent
+is_not_empty ${startedSSHagent} \
+    && ${_E} ssh-agent -k 1> /dev/null
+
+## END
