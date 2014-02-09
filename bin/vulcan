@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 ### Vulcan is my version of Flashbake.
 #  vulcan --vcsh --sshkey keyname repo
 #  vulcan git_directory
