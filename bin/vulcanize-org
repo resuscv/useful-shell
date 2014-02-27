@@ -2,9 +2,17 @@
 # Run my 'vulcan' script automatically on all 'org-XXX' vcsh repos.
 #
 #     vulcanize-org my-ssh-key 2 10
+#  OR
+#     vulcanize-org my-ssh-key now now
 #
 # Every two (2) hours if the minutes past the hour are less than ten (10) then do
 # network calls otherwise don't.
+#  OR
+# Run the full networked calls, now.
+#
+#
+# KNOWN ISSUES:
+# - If you set the "minutes past the hour" to 0 (zero) there will be a divide by zero error.
 
 if [ $# -ne 3 ]; then
     cat <<EOF
@@ -39,9 +47,18 @@ WantDebugging() {
 }
 
 WantNetworking() {
-    [[ $(echo "${CUR_HR} % ${NET_HOUR}" | bc) -eq 0 ]] \
-	&& [[ $(echo "${CUR_MIN} / ${NET_MINUTE}" | bc) -eq 1 ]] \
-	&& echo "1"
+    local cur_hour
+    local cur_min
+
+    if [ "z${NET_HOUR}" == "znow" ] \
+	&& [ "z${NET_MINUTE}" == "znow" ]; then
+	# Want to run vulcan...NOW
+	echo "1"
+    else
+	[[ $(echo "${CUR_HR} % ${NET_HOUR}" | bc) -eq 0 ]] \
+	    && [[ $(echo "${CUR_MIN} / ${NET_MINUTE}" | bc) -eq 1 ]] \
+	    && echo "1"
+    fi
 }
 
 
