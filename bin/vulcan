@@ -205,7 +205,9 @@ EOF
     cd $REPO
     if [ $(git status 1>/dev/null 2>&1 ; echo $?) -eq 0 ]; then
 	${GIT} add . >> ${OutputFile} 2>&1 ; ERROR_COUNT=`expr ${ERROR_COUNT} + $?`
-	${GIT} commit -q -m "Auto commit by vulcan" >> ${OutputFile} 2>&1 ; ERROR_COUNT=`expr ${ERROR_COUNT} + $?`
+	# Only run the commit if there are changed files...
+	${GIT} diff-index --quiet --cached HEAD || \
+	    ${GIT} commit -q -m "Auto commit by vulcan" >> ${OutputFile} 2>&1 ; ERROR_COUNT=`expr ${ERROR_COUNT} + $?`
     else
       cat <<EOF
 !!! ERROR !!!   `date`
@@ -216,7 +218,8 @@ EOF
   fi
 elif [ "x$MODE" = "xvcsh" ]; then
     ${GIT} add . >> ${OutputFile} 2>&1 ; ERROR_COUNT=`expr ${ERROR_COUNT} + $?`
-    ${GIT} commit -q -m Vulcan_autocommit >> ${OutputFile} 2>&1 ; ERROR_COUNT=`expr ${ERROR_COUNT} + $?`
+    ${GIT} diff-index --quiet --cached HEAD || \
+	${GIT} commit -q -m Vulcan_autocommit >> ${OutputFile} 2>&1 ; ERROR_COUNT=`expr ${ERROR_COUNT} + $?`
 fi
 
 
