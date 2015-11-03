@@ -15,6 +15,13 @@ ERROR_COUNT=0
 # Default is 30 seconds for the ssh-agent key lifetime.
 SSH_LIFETIME=30
 
+# Handle non-linux installs...
+GETOPT=getopt
+[ $(uname) == "Darwin" ] && \
+    GETOPT=$(brew list gnu-getopt | grep '/bin/')
+
+
+
 die() {
     echo "$@"
 
@@ -78,7 +85,7 @@ EOF
     || usage
 
 
-ARGS=$(getopt \
+ARGS=$(${GETOPT} \
 -n "${PROGRAMME_NAME}" \
 -o "vdh" \
 --long "vcsh,sshkey:,sshlifetime:,debug,help,notall,nopush,nopull,nonet,tmpdir:" \
