@@ -226,7 +226,7 @@ EOF
 elif [ "x$MODE" = "xvcsh" ]; then
     ${GIT} add . >> ${OutputFile} 2>&1 ; ERROR_COUNT=`expr ${ERROR_COUNT} + $?`
     ${GIT} diff-index --quiet --cached HEAD || \
-	${GIT} commit -q -m Vulcan_autocommit >> ${OutputFile} 2>&1 ; ERROR_COUNT=`expr ${ERROR_COUNT} + $?`
+	${GIT} commit -q -m "Vulcan_autocommit: $(uptime)" >> ${OutputFile} 2>&1 ; ERROR_COUNT=`expr ${ERROR_COUNT} + $?`
 fi
 
 
