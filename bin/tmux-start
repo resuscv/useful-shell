@@ -17,10 +17,6 @@ CreateBaseSession() {
     ${CMD} split-window -h -t ${1}
     ${CMD} split-window -v -t ${1}
     ${CMD} select-layout -t ${1} tiled
-
-    # Org mode: A single pane setup
-    ${CMD} new-window -n orgmode -t ${1}
-    ${CMD} send-keys -t orgmode 'emacs -nw' C-m
 }
 
 AttachToBaseSession() {
