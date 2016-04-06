@@ -2,6 +2,7 @@
 !bin/anon-git
 !bin/fat-git
 !bin/findin
+!bin/git-tools
 !bin/sep
 !bin/shbang
 !bin/sortdu
