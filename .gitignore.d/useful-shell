@@ -3,6 +3,7 @@
 !bin/fat-git
 !bin/findin
 !bin/git-tools
+!bin/ipynb_drop_output
 !bin/sep
 !bin/shbang
 !bin/sortdu
