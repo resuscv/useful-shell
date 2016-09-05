@@ -29,4 +29,16 @@ git add -p <filename>
         and add them to the index. This gives the user a chance to review the
         difference before adding modified contents to the index.
 
+
+--- DELETE ---
+
+git push origin --delete <branchName>
+
+
+--- LOGS, etc. ---
+
+git describe --always
+    Describe a commit using the most recent tag reachable from it
+
 EOF
+# This is the end, the end my friend...
