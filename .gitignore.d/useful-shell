@@ -3,6 +3,7 @@
 !bin/fat-git
 !bin/findin
 !bin/git-tools
+!/bin/notmuch-gmail-tags.sh
 !bin/sep
 !bin/shbang
 !bin/sortdu
