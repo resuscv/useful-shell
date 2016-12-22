@@ -180,7 +180,7 @@ for m in ${MSGIDs}; do
 
             #####
             # Now remove the 'new' tag from the message
-            TAGS="-new ${TAGS}"
+            TAGS="${TAGS} -new"
 
             #####
             # Handle the case of no tags from 'X-Keywords'
