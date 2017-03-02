@@ -8,6 +8,7 @@
 !bin/sep
 !bin/shbang
 !bin/sortdu
+!bin/toolkit.sh
 !bin/tmux-start
 !bin/ungit
 !bin/update-afraid.sh
