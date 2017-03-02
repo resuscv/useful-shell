@@ -4,7 +4,8 @@
 !bin/findin
 !bin/git-tools
 !bin/ipynb_drop_output
-!/bin/notmuch-gmail-tags.sh
+!bin/mount-and-check.sh
+!bin/notmuch-gmail-tags.sh
 !bin/sep
 !bin/shbang
 !bin/sortdu
