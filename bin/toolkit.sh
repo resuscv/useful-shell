@@ -6,7 +6,7 @@
 readonly PROGNAME=$(basename $0)
 readonly PROGDIR=$(readlink -m $(dirname $0))
 readonly ARGS="$@"
-
+# See end of file for readonlys that depend on functions in this file
 
 is_dir() {
     local dir=$1
@@ -68,3 +68,7 @@ fatal() {
     echo "Exiting with error code  ${exitcode}"
     exit ${exitcode}
 }
+
+
+# More readonly's that depend on the above...
+readonly _E=$(WantDebugging ${DEBUG})
